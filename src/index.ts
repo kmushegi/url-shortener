@@ -20,7 +20,7 @@ const start = async () => {
     // server.register(require('@fastify/redis'), { redisClient })
     server.register(url);
     server.listen(
-      { port: Number(process.env.PORT), host: "0.0.0.0" },
+      { port: 9090, host: "0.0.0.0" },
       (err: any, address: string) => {
         if (err) {
           throw new Error();

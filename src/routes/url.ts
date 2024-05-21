@@ -11,12 +11,14 @@ interface UrlEntry {
   hits: number;
 }
 
-const redisClient = new Redis({
-  host: process.env.REDIS_HOST,
-  port: Number(process.env.REDIS_PORT),
-  username: process.env.REDIS_USERNAME,
-  password: process.env.REDIS_PASSWORD,
-});
+// const redisClient = new Redis({
+//   host: process.env.REDIS_HOST,
+//   port: 6379,
+//   username: process.env.REDIS_USERNAME,
+//   password: process.env.REDIS_PASSWORD,
+// });
+
+const localCache: Record<string, UrlEntry> = {};
 
 const generateHash = (url: string): string => {
   return crypto.createHash('sha256').update(url).digest('hex').substring(0, 8); // Using the first 8 characters
@@ -30,21 +32,30 @@ export const shortenURL = async (url: string): Promise<string> => {
     url = 'https://' + url;
   }
 
-  let exists = await redisClient.get(hash);
+  // let exists = await redisClient.get(hash);
+  let exists = localCache[hash]?.longUrl;
   while (exists) {
     if (exists === url) {
       return hash; // If the same URL is hashed, reuse the hash
     }
     hash = generateHash(url + ++attempt);
-    exists = await redisClient.get(hash);
+    // exists = await redisClient.get(hash);
+    exists = localCache[hash]?.longUrl;
   }
 
-  await redisClient.set(hash, url);
+  // await redisClient.set(hash, url);
+  localCache[hash] = {
+    shortUrl: hash,
+    longUrl: url,
+    createdAt: new Date(),
+    hits: 0,
+  };
   return hash;
 };
 
 export const getUrl = async (shortUrl: string): Promise<string | null> => {
-  const url = await redisClient.get(shortUrl);
+  // const url = await redisClient.get(shortUrl);
+  const url = localCache[shortUrl]?.longUrl;
   return url;
 };
 
